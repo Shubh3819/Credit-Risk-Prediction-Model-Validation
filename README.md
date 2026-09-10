@@ -1,394 +1,170 @@
 # Credit Risk Prediction & Model Validation
 
-An end-to-end machine learning project for predicting **loan default risk** and evaluating the reliability, performance, and interpretability of credit risk models.
+An end-to-end machine learning project for predicting loan default risk
+and evaluating the reliability, performance, explainability, and stability
+of credit risk models.
 
-The project compares multiple supervised learning approaches, addresses class imbalance, evaluates predictive performance using multiple metrics, and uses explainability techniques to understand the key factors driving model predictions.
+The project uses the Home Credit Default Risk dataset and follows a
+model-risk-oriented workflow covering:
 
----
+- Exploratory Data Analysis
+- Data Quality and Risk Checks
+- Feature Engineering
+- Imbalanced Classification
+- Baseline and Advanced Modeling
+- Model Evaluation
+- Probability Calibration
+- Threshold Analysis
+- Segment Stability
+- SHAP Explainability
+- Model Risk Validation
 
-## 🎯 Project Objective
+## Project Objective
 
-Credit risk models are used to estimate the likelihood that a borrower may default on a loan.
+Credit risk models estimate the likelihood that a borrower will default
+on a loan.
 
-The objective of this project is to build a reliable predictive pipeline that:
+The objective of this project was not only to build a predictive model,
+but also to evaluate whether the model was reliable enough to support
+risk-based decision making.
 
-* Predicts the probability of loan default
-* Identifies high-risk applicants
-* Compares multiple machine learning models
-* Handles imbalanced credit-risk data
-* Evaluates model performance using appropriate metrics
-* Analyzes important risk-driving features
-* Provides interpretable model predictions
+The workflow therefore focuses on both:
 
-The project focuses not only on **model accuracy**, but also on **model evaluation, validation, and explainability**.
+1. Predictive performance
+2. Model validation and risk assessment
 
----
+## Final Model Results
 
-## 🧠 Machine Learning Approach
+The final model is a regularized XGBoost classifier.
 
-The project follows an end-to-end machine learning workflow:
+| Metric | Result |
+|---|---:|
+| Test ROC-AUC | 0.7829 |
+| Test PR-AUC | 0.2769 |
+| Classification Threshold | 0.2134 |
+| Test Precision | 31.96% |
+| Test Recall | 30.32% |
+| Test F1-score | 31.12% |
 
-```text
-Raw Dataset
-     ↓
-Data Cleaning
-     ↓
-Exploratory Data Analysis
-     ↓
-Feature Engineering
-     ↓
-Train / Test Split
-     ↓
-Class Imbalance Handling
-     ↓
-Model Training
-     ↓
-Cross-Validation
-     ↓
-Model Evaluation
-     ↓
-Threshold Optimization
-     ↓
-Explainability
-     ↓
-Risk Prediction
-```
+The model was evaluated on a completely held-out test set that was not
+used for model or threshold selection.
 
----
+## Model Comparison
 
-## 📊 Models Used
+A logistic regression model was first developed as a baseline.
+XGBoost was then introduced to capture nonlinear relationships and
+interactions between credit-risk variables.
 
-The following classification models are evaluated:
+| Model | Test ROC-AUC | Test PR-AUC |
+|---|---:|---:|
+| Logistic Regression | 0.7619 | 0.2454 |
+| Original XGBoost | 0.7809 | 0.2744 |
+| Final Tuned XGBoost | **0.7829** | **0.2769** |
 
-### Logistic Regression
+A controlled tuning round improved both ROC-AUC and PR-AUC while
+avoiding extensive hyperparameter searching.
 
-Used as an interpretable baseline model for credit risk prediction.
+## Model Risk Validation
 
-### Random Forest
+The final model was evaluated beyond ROC-AUC to assess its reliability
+and behavior under different conditions.
 
-Used to capture non-linear relationships between applicant characteristics and default risk.
+### Discrimination
 
-### Gradient Boosting / XGBoost
+The final model achieved a test ROC-AUC of 0.7829 and PR-AUC of 0.2769.
 
-Used to improve predictive performance by combining multiple weak learners into a strong classifier.
+ROC-AUC evaluates ranking ability, while PR-AUC is particularly useful
+for this problem because the default class represents only approximately
+8% of observations.
 
-Models are compared using consistent validation procedures rather than relying only on training accuracy.
+### Calibration
 
----
+Predicted probabilities were compared with observed default rates
+across probability deciles using a calibration curve.
 
-## 🔍 Data Processing
+The model showed generally reasonable alignment between predicted and
+observed default rates.
 
-The preprocessing pipeline includes:
+### Threshold Analysis
 
-* Missing-value handling
-* Categorical variable encoding
-* Numerical feature scaling where appropriate
-* Outlier analysis
-* Feature engineering
-* Duplicate detection
-* Train/test separation
-* Prevention of data leakage
+The conventional 0.5 threshold produced high precision but very low
+default recall.
 
-Special attention is given to ensuring that information from the test set does not influence model training.
+A threshold of 0.2134 was selected on the validation set to target
+approximately 30% recall.
 
----
+When applied unchanged to the test set:
 
-## ⚖️ Handling Class Imbalance
+- Precision: 31.96%
+- Recall: 30.32%
+- F1-score: 31.12%
 
-Credit default datasets can contain significantly fewer default cases than non-default cases.
+This demonstrates the importance of selecting an operating threshold
+based on the intended risk objective rather than automatically using 0.5.
 
-To address this, the project evaluates techniques such as:
+### Generalization
 
-* Class weighting
-* Random oversampling
-* SMOTE
-* Classification threshold optimization
+Validation and test performance were closely aligned:
 
-Rather than optimizing solely for accuracy, the project focuses on correctly identifying high-risk applicants.
+- Validation ROC-AUC: 0.7805
+- Test ROC-AUC: 0.7829
+- Validation PR-AUC: 0.2742
+- Test PR-AUC: 0.2769
 
----
+This provides evidence of reasonably stable out-of-sample performance.
 
-## 📈 Model Evaluation
+### Segment Stability
 
-Models are evaluated using multiple metrics:
+Model discrimination was evaluated across age and income segments.
+No major collapse in ROC-AUC was observed across the evaluated segments.
 
-| Metric           | Purpose                                   |
-| ---------------- | ----------------------------------------- |
-| Accuracy         | Overall prediction correctness            |
-| Precision        | Reliability of positive risk predictions  |
-| Recall           | Ability to identify risky applicants      |
-| F1-Score         | Balance between precision and recall      |
-| ROC-AUC          | Overall ranking/discrimination capability |
-| PR-AUC           | Performance under class imbalance         |
-| Confusion Matrix | Detailed classification behavior          |
+The lowest observed age-segment ROC-AUC was approximately 0.735,
+while income-segment ROC-AUC remained above approximately 0.766.
 
-Cross-validation is used to assess model stability across different data splits.
+## Explainability
 
----
+SHAP was used to understand the features contributing most strongly
+to the final model's predictions.
 
-## 🎚️ Threshold Optimization
+The strongest contributors included:
 
-A default probability threshold of 0.5 is not always appropriate for credit-risk applications.
+1. EXT_SOURCE_2
+2. EXT_SOURCE_3
+3. EXT_SOURCE_1
+4. CREDIT_TO_GOODS_PRICE
+5. AMT_ANNUITY
+6. INSTALLMENT_LATE_RATE
+7. PREV_AMT_ANNUITY_MEAN
+8. ANNUITY_TO_CREDIT
+9. EMPLOYMENT_YEARS
+10. PREV_CREDIT_TO_APPLICATION_MEAN
 
-This project evaluates different probability thresholds to understand the trade-off between:
+The external credit-related variables were the dominant contributors,
+followed by loan affordability/structure and historical repayment
+behavior.
 
-```text
-False Positives  ↔  False Negatives
-```
+SHAP importance measures contribution magnitude and does not by itself
+establish causality or the direction of a feature's effect.
 
-The goal is to select a threshold that provides an appropriate balance between identifying risky applicants and avoiding excessive false alarms.
+![SHAP Feature Importance](figures/final_shap_feature_importance.png)
 
----
 
-## 🔬 Model Explainability
+## Model Risk Limitations
 
-To improve interpretability, the project uses:
+The project demonstrates a model-risk-oriented validation workflow,
+but the model should not be considered production-ready.
 
-* Feature importance
-* SHAP values
-* Individual prediction explanations
+Important remaining validation areas include:
 
-SHAP analysis helps answer questions such as:
+- Out-of-time / temporal validation
+- Population Stability Index (PSI)
+- Feature and population drift monitoring
+- Formal fairness and disparate-impact analysis
+- Cost-sensitive threshold optimization
+- Probability recalibration if required
+- Challenger model comparison
+- Production monitoring and model governance controls
 
-> Why was this applicant classified as high risk?
-
-and
-
-> Which features contribute most strongly to the predicted default probability?
-
-Example:
-
-```text
-Applicant Risk Prediction
-
-Predicted Default Probability: 78%
-
-Key Risk Drivers:
-+ High debt-to-income ratio
-+ Previous payment history
-+ High outstanding balance
-
-Risk-Reducing Factors:
-- Stable employment history
-- Longer credit history
-```
-
----
-
-## 🛡️ Model Validation & Risk Checks
-
-The project includes several validation checks designed to identify potential issues in the modeling pipeline:
-
-### Data Quality
-
-* Missing values
-* Duplicate records
-* Invalid values
-* Outliers
-
-### Modeling Risks
-
-* Data leakage
-* Overfitting
-* Class imbalance
-* Feature redundancy
-
-### Performance Stability
-
-* Cross-validation performance
-* Train vs. test performance
-* Metric consistency
-* Threshold sensitivity
-
-### Interpretability
-
-* Feature importance
-* SHAP explanations
-* Individual prediction analysis
-
----
-
-## 📁 Project Structure
-
-```text
-credit-risk-prediction/
-│
-├── data/
-│   ├── raw/
-│   └── processed/
-│
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_preprocessing.ipynb
-│   ├── 03_model_training.ipynb
-│   ├── 04_model_evaluation.ipynb
-│   └── 05_model_explainability.ipynb
-│
-├── src/
-│   ├── preprocessing.py
-│   ├── feature_engineering.py
-│   ├── train.py
-│   ├── evaluate.py
-│   └── explainability.py
-│
-├── models/
-│
-├── reports/
-│   └── model_validation_report.md
-│
-├── requirements.txt
-├── README.md
-└── .gitignore
-```
-
----
-
-## 🛠️ Tech Stack
-
-**Programming**
-
-* Python
-* SQL
-
-**Data Science**
-
-* Pandas
-* NumPy
-* Matplotlib
-* Scikit-learn
-
-**Machine Learning**
-
-* Logistic Regression
-* Random Forest
-* Gradient Boosting
-* XGBoost
-
-**Model Evaluation**
-
-* Cross-validation
-* ROC-AUC
-* PR-AUC
-* Precision
-* Recall
-* F1-score
-* Confusion Matrix
-
-**Explainability**
-
-* SHAP
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/<your-username>/credit-risk-prediction.git
-cd credit-risk-prediction
-```
-
-### 2. Create a virtual environment
-
-```bash
-python -m venv venv
-```
-
-Activate it:
-
-**Windows**
-
-```bash
-venv\Scripts\activate
-```
-
-**Linux / macOS**
-
-```bash
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Run the project
-
-```bash
-python src/train.py
-```
-
-Then evaluate the trained model:
-
-```bash
-python src/evaluate.py
-```
-
----
-
-## 📊 Results
-
-The final model is selected based on a combination of:
-
-* Predictive discrimination
-* Precision and recall
-* PR-AUC
-* Cross-validation stability
-* Generalization performance
-* Interpretability
-
-Example results:
-
-| Model               | ROC-AUC | Precision | Recall | F1 |
-| ------------------- | ------: | --------: | -----: | -: |
-| Logistic Regression |      -- |        -- |     -- | -- |
-| Random Forest       |      -- |        -- |     -- | -- |
-| Gradient Boosting   |      -- |        -- |     -- | -- |
-| XGBoost             |      -- |        -- |     -- | -- |
-
-> Results will vary depending on the dataset, preprocessing strategy, and validation configuration.
-
----
-
-## 💡 Key Learnings
-
-Through this project, I explored:
-
-* End-to-end predictive modeling
-* Credit risk analytics
-* Feature engineering
-* Supervised machine learning
-* Imbalanced classification
-* Model comparison
-* Cross-validation
-* Threshold optimization
-* Model explainability
-* Data leakage prevention
-* Model performance analysis
-* Risk-oriented model evaluation
-
----
-
-## 🔮 Future Improvements
-
-Potential extensions include:
-
-* Probability calibration
-* Population Stability Index (PSI)
-* Model drift monitoring
-* Fairness and bias analysis
-* Automated model validation reports
-* REST API for real-time risk scoring
-* Interactive model monitoring dashboard
-* Model performance monitoring over time
-
----
-
-## 📌 Disclaimer
-
-This project is intended for **educational and research purposes only**.
-
-The predictions generated by this system should not be used as the sole basis for real-world lending or financial decisions.
+The dataset is also a historical benchmark dataset rather than a
+production credit portfolio, so real-world deployment would require
+additional validation and governance.
