@@ -1,0 +1,8 @@
+loan_amount
+annual_income
+age
+years_employed
+num_dependents
+years_at_residence
+interest_rate_pct
+tenure_months
